@@ -79,5 +79,5 @@ Make sure Mosquitto is running, then publish a test message:
 mosquitto_pub -h 127.0.0.1 -p 1883 -t "beacon/data" -m "{\"mac_address\":\"C1DCC29A8D6A\",\"location_id\":1,\"rssi\":-75}"
 ```
 
-## 🔗 Frontend
+## Frontend
 React dashboard: [beacon-dashboard](https://github.com/asyiqinrohaidy/beacon-dashboard)
