@@ -10,12 +10,8 @@ class LocationSeeder extends Seeder
     public function run(): void
     {
         $locations = [
-            ['name' => 'Reception', 'description' => 'Main entrance area'],
-            ['name' => 'Meeting Room A', 'description' => 'Ground floor meeting room'],
-            ['name' => 'Meeting Room B', 'description' => 'First floor meeting room'],
-            ['name' => 'Pantry', 'description' => 'Kitchen and break area'],
-            ['name' => 'HR Office', 'description' => 'Human Resources department'],
-            ['name' => 'IT Room', 'description' => 'Information Technology department'],
+            ['name' => 'Workshop First Floor', 'description' => 'First floor workshop area'],
+            ['name' => 'Meeting Room Second Floor', 'description' => 'Second floor meeting room'],
         ];
 
         foreach ($locations as $location) {
