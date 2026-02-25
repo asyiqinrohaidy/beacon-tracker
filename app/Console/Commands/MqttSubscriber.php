@@ -22,6 +22,10 @@ class MqttSubscriber extends Command
     // Store latest RSSI from each gateway per beacon MAC
     protected $beaconRssi = [];
 
+    // Store RSSI history for averaging (last 5 readings)
+    protected $rssiHistory = [];
+    protected $historySize = 5;
+
     public function handle()
     {
         $this->info('Connecting to MQTT broker...');
@@ -52,7 +56,7 @@ class MqttSubscriber extends Command
             $employee = Employee::whereRaw('UPPER(REPLACE(mac_address, ":", "")) = ?', [$mac])->first();
             if (!$employee) continue;
 
-            // Store latest RSSI for this beacon from this gateway
+            // Initialize arrays for this beacon
             if (!isset($this->beaconRssi[$mac])) {
                 $this->beaconRssi[$mac] = [
                     '40915187ded4' => null,
@@ -60,7 +64,22 @@ class MqttSubscriber extends Command
                 ];
             }
 
-            $this->beaconRssi[$mac][$gatewayMac] = $rssi;
+            if (!isset($this->rssiHistory[$mac])) {
+                $this->rssiHistory[$mac] = [
+                    '40915187ded4' => [],
+                    '409151b99f40' => [],
+                ];
+            }
+
+            // Add to history and keep only last N readings
+            $this->rssiHistory[$mac][$gatewayMac][] = $rssi;
+            if (count($this->rssiHistory[$mac][$gatewayMac]) > $this->historySize) {
+                array_shift($this->rssiHistory[$mac][$gatewayMac]);
+            }
+
+            // Calculate averaged RSSI
+            $avgRssi = (int) round(array_sum($this->rssiHistory[$mac][$gatewayMac]) / count($this->rssiHistory[$mac][$gatewayMac]));
+            $this->beaconRssi[$mac][$gatewayMac] = $avgRssi;
 
             $gw1 = $this->beaconRssi[$mac]['40915187ded4'];
             $gw2 = $this->beaconRssi[$mac]['409151b99f40'];
@@ -68,8 +87,8 @@ class MqttSubscriber extends Command
             // Show both gateway RSSI
             $this->info("--------------------------------------------------");
             $this->info("Employee : {$employee->name}");
-            $this->info("GW1 (First Floor)   : " . ($gw1 ?? 'N/A') . " dBm");
-            $this->info("GW2 (Second Floor)  : " . ($gw2 ?? 'N/A') . " dBm");
+            $this->info("GW1 (First Floor)   : " . ($gw1 ?? 'N/A') . " dBm (avg of " . count($this->rssiHistory[$mac]['40915187ded4']) . " readings)");
+            $this->info("GW2 (Second Floor)  : " . ($gw2 ?? 'N/A') . " dBm (avg of " . count($this->rssiHistory[$mac]['409151b99f40']) . " readings)");
 
             // Only predict if we have RSSI from both gateways
             if ($gw1 !== null && $gw2 !== null) {
