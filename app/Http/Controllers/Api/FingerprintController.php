@@ -27,7 +27,7 @@ class FingerprintController extends Controller
         return response()->json(Fingerprint::all());
     }
 
-    // Predict location using KNN algorithm
+    // Predict location using Weighted KNN algorithm
     public function predict(Request $request)
     {
         $liveG1 = $request->gateway_1_rssi;
@@ -52,16 +52,25 @@ class FingerprintController extends Controller
             ];
         });
 
-        // Sort by distance and take K=3 nearest neighbors
-        $k = 3;
+        // Sort by distance and take K=5 nearest neighbors
+        $k = 5;
         $nearest = $distances->sortBy('distance')->take($k);
 
-        // Vote for the most common location among neighbors
-        $votes = $nearest->groupBy('location_name')
-            ->map(fn($group) => $group->count())
-            ->sortDesc();
+        // Weighted KNN — closer neighbors get more weight (1/distance)
+        $weightedVotes = [];
+        foreach ($nearest as $neighbor) {
+            $location = $neighbor['location_name'];
+            $weight = $neighbor['distance'] > 0 ? 1 / $neighbor['distance'] : 100;
 
-        $predictedLocation = $votes->keys()->first();
+            if (!isset($weightedVotes[$location])) {
+                $weightedVotes[$location] = 0;
+            }
+            $weightedVotes[$location] += $weight;
+        }
+
+        // Sort by highest weight
+        arsort($weightedVotes);
+        $predictedLocation = array_key_first($weightedVotes);
         $nearestSpot = $nearest->first()['spot_name'];
 
         return response()->json([
@@ -70,7 +79,15 @@ class FingerprintController extends Controller
             'gateway_1_rssi'     => $liveG1,
             'gateway_2_rssi'     => $liveG2,
             'neighbors'          => $nearest->values(),
+            'weighted_votes'     => $weightedVotes,
         ]);
+    }
+
+    // Delete a single fingerprint
+    public function destroy($id)
+    {
+        Fingerprint::findOrFail($id)->delete();
+        return response()->json(['message' => 'Fingerprint deleted']);
     }
 
     // Delete all fingerprints (reset training)

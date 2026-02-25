@@ -35,5 +35,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/fingerprint/train', [FingerprintController::class, 'train']);
     Route::get('/fingerprint', [FingerprintController::class, 'index']);
     Route::post('/fingerprint/predict', [FingerprintController::class, 'predict']);
+    Route::delete('/fingerprint/{id}', [FingerprintController::class, 'destroy']);
     Route::delete('/fingerprint/reset', [FingerprintController::class, 'reset']);
 });

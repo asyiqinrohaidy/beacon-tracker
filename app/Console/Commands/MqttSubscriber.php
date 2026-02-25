@@ -15,8 +15,8 @@ class MqttSubscriber extends Command
     protected $description = 'Subscribe to MQTT broker and listen for beacon data';
 
     protected $gatewayLocationMap = [
-        '40915187ded4' => 1,
-        '409151b99f40' => 2,
+        '40915187ded4' => 1, // First Floor
+        '409151b99f40' => 2, // Second Floor
     ];
 
     // Store latest RSSI from each gateway per beacon MAC
@@ -68,8 +68,8 @@ class MqttSubscriber extends Command
             // Show both gateway RSSI
             $this->info("--------------------------------------------------");
             $this->info("Employee : {$employee->name}");
-            $this->info("GW1 (Workshop First Floor)       : " . ($gw1 ?? 'N/A') . " dBm");
-            $this->info("GW2 (Meeting Room Second Floor)  : " . ($gw2 ?? 'N/A') . " dBm");
+            $this->info("GW1 (First Floor)   : " . ($gw1 ?? 'N/A') . " dBm");
+            $this->info("GW2 (Second Floor)  : " . ($gw2 ?? 'N/A') . " dBm");
 
             // Only predict if we have RSSI from both gateways
             if ($gw1 !== null && $gw2 !== null) {
@@ -113,15 +113,26 @@ class MqttSubscriber extends Command
             ];
         });
 
-        $k = 3;
+        // Sort by distance and take K=5 nearest neighbors
+        $k = 5;
         $nearest = $distances->sortBy('distance')->take($k);
 
-        $votes = $nearest->groupBy('location')
-            ->map(fn($group) => $group->count())
-            ->sortDesc();
+        // Weighted KNN — closer neighbors get more weight (1/distance)
+        $weightedVotes = [];
+        foreach ($nearest as $neighbor) {
+            $location = $neighbor['location'];
+            $weight = $neighbor['distance'] > 0 ? 1 / $neighbor['distance'] : 100;
+
+            if (!isset($weightedVotes[$location])) {
+                $weightedVotes[$location] = 0;
+            }
+            $weightedVotes[$location] += $weight;
+        }
+
+        arsort($weightedVotes);
 
         return [
-            'location' => $votes->keys()->first(),
+            'location' => array_key_first($weightedVotes),
             'spot'     => $nearest->first()['spot'],
         ];
     }
