@@ -1,4 +1,4 @@
-# Beacon Tracker — Laravel Backend
+# BeaconCore — Laravel Backend
 
 A real-time IoT employee location tracking system built with Laravel, MQTT, and Bluetooth beacons.
 
