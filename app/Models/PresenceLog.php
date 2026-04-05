@@ -6,7 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class PresenceLog extends Model
 {
-    protected $fillable = ['employee_id', 'location_id', 'rssi', 'detected_at'];
+    protected $fillable = [
+        'employee_id',
+        'location_id',
+        'spot_name',
+        'rssi',
+        'detected_at',
+    ];
 
     public function employee()
     {

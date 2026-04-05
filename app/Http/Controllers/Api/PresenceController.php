@@ -15,9 +15,10 @@ class PresenceController extends Controller
 
         $data = $employees->map(function ($employee) {
             return [
-                'employee'  => $employee->name,
-                'department' => $employee->department,
-                'location'  => $employee->latestPresence?->location?->name ?? 'Unknown',
+                'employee'    => $employee->name,
+                'department'  => $employee->department,
+                'location'    => $employee->latestPresence?->location?->name ?? 'Unknown',
+                'spot_name'   => $employee->latestPresence?->spot_name ?? null,
                 'detected_at' => $employee->latestPresence?->detected_at,
             ];
         });
@@ -31,7 +32,17 @@ class PresenceController extends Controller
         $logs = PresenceLog::with(['employee', 'location'])
             ->orderBy('detected_at', 'desc')
             ->take(100)
-            ->get();
+            ->get()
+            ->map(function ($log) {
+                return [
+                    'employee'    => $log->employee?->name,
+                    'department'  => $log->employee?->department,
+                    'location'    => $log->location?->name ?? 'Unknown',
+                    'spot_name'   => $log->spot_name ?? $log->location?->name ?? 'Unknown',
+                    'rssi'        => $log->rssi,
+                    'detected_at' => $log->detected_at,
+                ];
+            });
 
         return response()->json($logs);
     }

@@ -10,12 +10,12 @@ class LocationSeeder extends Seeder
     public function run(): void
     {
         $locations = [
-            ['name' => 'Workshop First Floor', 'description' => 'First floor workshop area'],
-            ['name' => 'Meeting Room Second Floor', 'description' => 'Second floor meeting room'],
+            ['name' => 'First Floor', 'description' => 'First floor area (Workshop, Office, Meeting Room)'],
+            ['name' => 'Second Floor', 'description' => 'Second floor area (Pantry, Meeting Room B)'],
         ];
 
         foreach ($locations as $location) {
-            Location::create($location);
+            Location::firstOrCreate(['name' => $location['name']], $location);
         }
     }
 }

@@ -11,5 +11,6 @@ class Fingerprint extends Model
         'location_name',
         'gateway_1_rssi',
         'gateway_2_rssi',
+        'gateway_3_rssi',
     ];
 }
